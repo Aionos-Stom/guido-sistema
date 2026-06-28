@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.voters (
   name                    TEXT        NOT NULL,
   cedula                  TEXT        NOT NULL UNIQUE,
   phone                   TEXT,
+  edad                    INTEGER,
   region                  TEXT,
   province                TEXT,
   municipio               TEXT,

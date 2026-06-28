@@ -47,6 +47,7 @@ const DOM = {
   voterMessage:           document.getElementById('voterMessage'),
   votersTableBody:        document.getElementById('votersTableBody'),
   usersTableBody:         document.getElementById('usersTableBody'),
+  usersListContainer:     document.getElementById('usersListContainer'),
   searchResults:          document.getElementById('searchResults'),
   filteredCountBadge:     document.getElementById('filteredCountBadge'),
   userPermissionsNote:    document.getElementById('userPermissionsNote'),
@@ -82,6 +83,7 @@ const DOM = {
   voterName:              document.getElementById('voterName'),
   voterCedula:            document.getElementById('voterCedula'),
   voterPhone:             document.getElementById('voterPhone'),
+  voterAge:               document.getElementById('voterAge'),
   voterProvince:          document.getElementById('voterProvince'),
   voterRegion:            document.getElementById('voterRegion'),
   voterMunicipio:         document.getElementById('voterMunicipio'),
@@ -428,8 +430,9 @@ async function renderVotersTable() {
 }
 
 async function renderUsers() {
-  if (!DOM.usersTableBody) return;
-  DOM.usersTableBody.innerHTML = '';
+  const container = DOM.usersListContainer;
+  if (!container) return;
+  container.innerHTML = '';
   if (DOM.userPermissionsNote) DOM.userPermissionsNote.textContent = hasSuperAccess() ? 'Gestión total de usuarios' : 'Visualización según permisos';
 
   if (!hasSuperAccess()) { DOM.usersSection?.classList.add('section-hidden'); return; }
@@ -444,39 +447,65 @@ async function renderUsers() {
   });
 
   if (!ordered.length) {
-    DOM.usersTableBody.innerHTML = `<tr><td colspan="12">No hay usuarios para mostrar.</td></tr>`;
+    container.innerHTML = '<div class="users-empty">No hay usuarios para mostrar.</div>';
     return;
   }
 
+  const chevronSVG = `<svg class="user-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>`;
+
   ordered.forEach(user => {
-    const row = document.createElement('tr');
-    const sc  = String(user.status || 'Pendiente').toLowerCase();
-    let actHtml = `<div class="actions-wrap">
-      <button class="action-btn edit"   type="button" data-action="edit-user"   data-id="${escapeHtml(user.id)}">Editar</button>
-      <button class="action-btn delete" type="button" data-action="delete-user" data-id="${escapeHtml(user.id)}">Eliminar</button>
-    </div>`;
-    if ((user.status || 'Pendiente') === 'Pendiente') {
-      actHtml = `<div class="actions-wrap">
-        ${isAdmin() ? `<button class="action-btn approve" type="button" data-action="approve-user" data-id="${escapeHtml(user.id)}">Aprobar</button>` : ''}
-        <button class="action-btn edit"    type="button" data-action="edit-user"    data-id="${escapeHtml(user.id)}">Editar</button>
-        <button class="action-btn delete"  type="button" data-action="delete-user"  data-id="${escapeHtml(user.id)}">Eliminar</button>
+    const sc       = String(user.status || 'Pendiente').toLowerCase();
+    const isPending = sc === 'pendiente';
+    const initials  = (user.name || 'U').trim().split(' ').map(w => w[0] || '').slice(0,2).join('').toUpperCase();
+
+    const approveBtn = (isPending && isAdmin())
+      ? `<button class="action-btn approve" type="button" data-action="approve-user" data-id="${escapeHtml(user.id)}">Aprobar</button>` : '';
+
+    const item = document.createElement('div');
+    item.className = 'user-item';
+    item.dataset.id = user.id;
+    item.innerHTML = `
+      <div class="user-item-header" role="button" tabindex="0" aria-expanded="false">
+        <div class="user-item-avatar">${escapeHtml(initials)}</div>
+        <div class="user-item-info">
+          <strong>${escapeHtml(user.name)}</strong>
+          <span>@${escapeHtml(user.username)}</span>
+        </div>
+        <span class="user-item-role">${escapeHtml(user.role)}</span>
+        <span class="status-pill ${escapeHtml(sc)}">${escapeHtml(user.status || 'Pendiente')}</span>
+        ${chevronSVG}
+      </div>
+      <div class="user-item-body" hidden>
+        <div class="user-item-fields">
+          <div class="user-item-field"><span>Correo</span><strong>${escapeHtml(user.email    || '—')}</strong></div>
+          <div class="user-item-field"><span>Teléfono</span><strong>${escapeHtml(user.phone   || '—')}</strong></div>
+          <div class="user-item-field"><span>Región</span><strong>${escapeHtml(user.region    || '—')}</strong></div>
+          <div class="user-item-field"><span>Provincia</span><strong>${escapeHtml(user.province|| '—')}</strong></div>
+          <div class="user-item-field"><span>Municipio</span><strong>${escapeHtml(user.municipio||'—')}</strong></div>
+          <div class="user-item-field"><span>Distrito</span><strong>${escapeHtml(user.distrito  ||'—')}</strong></div>
+          <div class="user-item-field"><span>Zona</span><strong>${escapeHtml(user.zone       || '—')}</strong></div>
+        </div>
+        <div class="user-item-actions">
+          ${approveBtn}
+          <button class="action-btn edit"   type="button" data-action="edit-user"   data-id="${escapeHtml(user.id)}">Editar</button>
+          <button class="action-btn delete" type="button" data-action="delete-user" data-id="${escapeHtml(user.id)}">Eliminar</button>
+        </div>
       </div>`;
-    }
-    row.innerHTML = `
-      <td>${escapeHtml(user.name)}</td>
-      <td>${escapeHtml(user.username)}</td>
-      <td>${escapeHtml(user.email    || '')}</td>
-      <td>${escapeHtml(user.role)}</td>
-      <td>${escapeHtml(user.phone    || '')}</td>
-      <td>${escapeHtml(user.region   || '')}</td>
-      <td>${escapeHtml(user.province || '')}</td>
-      <td>${escapeHtml(user.municipio|| '')}</td>
-      <td>${escapeHtml(user.distrito || '')}</td>
-      <td>${escapeHtml(user.zone     || '')}</td>
-      <td><span class="status-pill ${escapeHtml(sc)}">${escapeHtml(user.status || 'Pendiente')}</span></td>
-      <td class="actions-cell">${actHtml}</td>
-    `;
-    DOM.usersTableBody.appendChild(row);
+
+    const hdr  = item.querySelector('.user-item-header');
+    const body = item.querySelector('.user-item-body');
+    hdr.addEventListener('click', () => {
+      const opening = body.hidden;
+      container.querySelectorAll('.user-item').forEach(el => {
+        el.classList.remove('open');
+        el.querySelector('.user-item-body').hidden = true;
+        el.querySelector('.user-item-header').setAttribute('aria-expanded','false');
+      });
+      if (opening) { body.hidden = false; item.classList.add('open'); hdr.setAttribute('aria-expanded','true'); }
+    });
+    hdr.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); hdr.click(); } });
+
+    container.appendChild(item);
   });
 }
 
@@ -511,6 +540,7 @@ async function renderSearchResults() {
     item.innerHTML = `
       <div class="result-card-name">${escapeHtml(v.name)}</div>
       ${field('CÉDULA', v.cedula)}
+      ${field('EDAD', v.edad ? v.edad + ' años' : '')}
       ${field('TELÉFONO', v.phone)}
       ${field('REGIÓN', v.region)}
       ${field('PROVINCIA', v.province)}
@@ -792,6 +822,7 @@ function fillVoterForm(voter) {
   DOM.voterName.value        = voter.name        || '';
   DOM.voterCedula.value      = formatCedula(voter.cedula || '');
   DOM.voterPhone.value       = formatPhone(voter.phone   || '');
+  if (DOM.voterAge) DOM.voterAge.value = voter.edad != null ? voter.edad : '';
   DOM.voterRegion.value      = voter.region      || '';
   DOM.voterProvince.value    = voter.province    || '';
   DOM.voterMunicipio.value   = voter.municipio   || '';
@@ -1384,7 +1415,7 @@ DOM.userEditForm?.addEventListener('submit', async function(e) {
 
 // ── Eventos: Acciones en tabla de usuarios ──────────────────────
 
-DOM.usersTableBody?.addEventListener('click', async function(e) {
+DOM.usersListContainer?.addEventListener('click', async function(e) {
   const btn = e.target.closest('button');
   if (!btn) return;
   const { action, id } = btn.dataset;
@@ -1454,12 +1485,14 @@ DOM.voterForm?.addEventListener('submit', async function(e) {
   const sector     = normalizeText(DOM.voterSector.value);
   const mesa       = normalizeText(DOM.voterMesa.value);
   const recinto    = normalizeText(DOM.voterRecinto.value);
+  const edad       = parseInt(DOM.voterAge?.value, 10) || null;
   const observacion= normalizeText(DOM.voterObservation.value);
   const editingId  = normalizeText(DOM.editingVoterId.value);
 
-  if (!name||!cedula||!phone||!region||!province||!municipio||!distrito||!zone||!sector||!mesa||!recinto) {
-    showMessage(DOM.voterMessage, 'Complete todos los campos requeridos.', 'error'); return;
+  if (!name||!cedula||!phone||!edad||!region||!province||!municipio||!distrito||!zone||!sector||!mesa||!recinto) {
+    showMessage(DOM.voterMessage, 'Complete todos los campos requeridos (incluyendo edad).', 'error'); return;
   }
+  if (edad < 16 || edad > 120) { showMessage(DOM.voterMessage, 'La edad debe estar entre 16 y 120 años.', 'error'); return; }
   if (!isValidCedula(cedula)) { showMessage(DOM.voterMessage, 'Ingrese una cédula válida de 11 dígitos.', 'error'); return; }
   if (!isValidPhone(phone))   { showMessage(DOM.voterMessage, 'Ingrese un teléfono válido de 10 dígitos.', 'error'); return; }
 
@@ -1468,7 +1501,7 @@ DOM.voterForm?.addEventListener('submit', async function(e) {
     if (existing) { showMessage(DOM.voterMessage, 'Ya existe un registro con esa cédula.', 'error'); return; }
 
     const { error } = await supabase.from('voters').insert({
-      name, cedula, phone, region, province, municipio, distrito, zone, sector, mesa, recinto, observacion,
+      name, cedula, phone, edad, region, province, municipio, distrito, zone, sector, mesa, recinto, observacion,
       registered_by_id:        currentUser.id,
       registered_by:           currentUser.username,
       registered_by_name:      currentUser.name,
@@ -1482,6 +1515,7 @@ DOM.voterForm?.addEventListener('submit', async function(e) {
     if (error) { showMessage(DOM.voterMessage, 'Error al guardar: ' + error.message, 'error'); return; }
     if (typeof window.logAudit === 'function') window.logAudit('VOTER_CREATE', null, name, {
       cédula:         cedula,
+      edad:           edad ? edad + ' años' : '—',
       teléfono:       phone,
       región:         region,
       provincia:      province,
@@ -1509,11 +1543,12 @@ DOM.voterForm?.addEventListener('submit', async function(e) {
   if (dup) { showMessage(DOM.voterMessage, 'Ya existe otro registro con esa cédula.', 'error'); return; }
 
   const { error } = await supabase.from('voters')
-    .update({ name, cedula, phone, region, province, municipio, distrito, zone, sector, mesa, recinto, observacion, updated_at: new Date().toISOString() })
+    .update({ name, cedula, phone, edad, region, province, municipio, distrito, zone, sector, mesa, recinto, observacion, updated_at: new Date().toISOString() })
     .eq('id', editingId);
   if (error) { showMessage(DOM.voterMessage, 'Error al actualizar: ' + error.message, 'error'); return; }
   if (typeof window.logAudit === 'function') window.logAudit('VOTER_EDIT', editingId, name, {
     cédula:      cedula,
+    edad:        edad ? edad + ' años' : '—',
     teléfono:    phone,
     región:      region,
     provincia:   province,

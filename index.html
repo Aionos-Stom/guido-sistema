@@ -409,11 +409,18 @@
                 <input type="text" id="voterPhone" placeholder="809-000-0000" required inputmode="tel" />
               </div>
               <div class="input-group">
+                <label for="voterAge">Edad <span style="color:var(--gov-red);font-size:0.75rem;">*</span></label>
+                <input type="number" id="voterAge" min="16" max="120" placeholder="Ej. 35" required inputmode="numeric" />
+              </div>
+              <div class="input-group">
                 <label for="voterProvince">Provincia</label>
                 <select id="voterProvince" required>
                   <option value="">Seleccione</option>
                 </select>
               </div>
+            </div>
+
+            <div class="grid-2">
               <div class="input-group">
                 <label for="voterRegion">Región</label>
                 <input type="text" id="voterRegion" placeholder="Región" />
@@ -537,27 +544,7 @@
           <span class="soft-note" id="userPermissionsNote">Visualización según permisos</span>
         </div>
 
-        <div class="table-wrap table-wrap-fixed">
-          <table role="grid" aria-label="Tabla de usuarios">
-            <thead>
-              <tr>
-                <th scope="col">Nombre</th>
-                <th scope="col">Usuario</th>
-                <th scope="col">Correo</th>
-                <th scope="col">Rol</th>
-                <th scope="col">Teléfono</th>
-                <th scope="col">Región</th>
-                <th scope="col">Provincia</th>
-                <th scope="col">Municipio</th>
-                <th scope="col">Distrito</th>
-                <th scope="col">Zona</th>
-                <th scope="col">Estado</th>
-                <th scope="col">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody"></tbody>
-          </table>
-        </div>
+        <div id="usersListContainer" class="users-list"></div>
       </section>
 
       <!-- ════════════════════════════════════════════
@@ -846,7 +833,7 @@
         <img src="Logos/c3380bdf-93e0-4617-a452-797675ce82be.jpeg" alt="GUIDO" class="footer-org-logo" />
         <span>GUIDO</span>
       </div>
-      <span class="footer-copyright">© 2026 GUIDO · República Dominicana</span>
+      <span class="footer-copyright">© 2026 GUIDO GÓMEZ MAZARA · República Dominicana</span>
       <span class="footer-founder">Siempre cerca de ti</span>
     </div>
   </div>
